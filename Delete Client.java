@@ -23,19 +23,12 @@ public class Client extends Thread {
 		String filePath = "/Users/westongraham/Desktop/test.txt";
 
 		try {
+			Socket socket = new Socket(host, port);
+			PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
 
 			Path fileToDelete = Paths.get(filePath);
 			Files.delete(fileToDelete);
 			System.out.println("File: " + filePath + " was successfully deleted");
-
-		} catch (IOException e) {
-			e.printStackTrace();
-
-		}
-
-		try {
-			Socket socket = new Socket(host, port);
-			PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
 
 			System.out.println("Sending Message........");
 
