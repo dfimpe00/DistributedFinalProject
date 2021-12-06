@@ -13,9 +13,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.io.File;
 
 public class MasterServer {
-	
+
 	private static HashMap<String, HashMap<String, String[]>> fileLog = new HashMap<String, HashMap<String, String[]>>();
 	static ArrayList<String> nodeList = new ArrayList<String>();
 	public final static String FILE_TO_RECEIVED = "test123.txt";
@@ -27,7 +28,7 @@ public class MasterServer {
 		int current = 0;
 		FileOutputStream fos = null;
 		BufferedOutputStream bos = null;
-
+		
 		int port = 52005;
 
 		MasterClient masterClient;
@@ -37,7 +38,6 @@ public class MasterServer {
 		System.out.println("Server is starting...");
 
 		while (true) {
-			String instruction = "";
 
 			try {
 				masterClient = new MasterClient(server.accept());
@@ -47,7 +47,7 @@ public class MasterServer {
 
 					System.out.println("Accepted connection : " + masterClient.client);
 
-					// recieve file
+					// receive file
 					byte[] mybytearray = new byte[FILE_SIZE];
 					InputStream is = masterClient.client.getInputStream();
 
@@ -93,13 +93,17 @@ public class MasterServer {
 
 						} else if (tokens[0].equals("2")) {
 							System.out.println("test");
+
+							// sends whatever is needed to all of the nodes when a file is sent rather than
+							// loading ip addresses
+							// still needs different cases.
+
 						}
 
 					}
 				} catch (Exception ex) {
 
 				}
-
 				for (int i = 0; i < nodeList.size(); i++) {
 					MasterClient.sendMessage(nodeList.get(i));
 				}
@@ -114,202 +118,200 @@ public class MasterServer {
 			}
 		}
 
-	}
-	
-		public static String[] getFileList(String username) {
 		
+	}
+
+	public static String[] getFileList(String username) {
+
 		Set<String> set = fileLog.get(username).keySet();
 		String[] fileList = new String[set.size()];
-		
+
 		int i = 0;
-		for(String x : set) {
+		for (String x : set) {
 			fileList[i] = x;
 			i++;
 		}
 		return fileList;
 	}
-	
-	//loads in values to fileLog from the masterfiles.txt
+
+	// loads in values to fileLog from the masterfiles.txt
 	public static void loadFileLog() {
-		
+
 		String[] logLine;
 		String username;
 		String filename;
-		// 
+		//
 		try (BufferedReader br = new BufferedReader(new FileReader("masterfiles.txt"))) {
-		    String line;
-		    while ((line = br.readLine()) != null && br.readLine()!=" ") {
-		       logLine = line.split("::");
-		       if(logLine.length == 5) {
-		    	   username = logLine[0];
-			       filename = logLine[1];
-			       String[] datePathServer = {logLine[2], logLine[3], logLine[4]};
-			       
-			       //if key doesn't exist add it and make the HashMap for the value
-			       if(!fileLog.containsKey(username)) {
-			    	   HashMap<String, String[]> innermap =  new HashMap<String, String[]>();
-			    	   innermap.put(filename, datePathServer);
-			    	   fileLog.put(username, innermap);
-			       }else {
-			    	   fileLog.get(username).put(filename, datePathServer);
-			       }
+			String line;
+			while ((line = br.readLine()) != null && br.readLine() != " ") {
+				logLine = line.split("::");
+				if (logLine.length == 5) {
+					username = logLine[0];
+					filename = logLine[1];
+					String[] datePathServer = { logLine[2], logLine[3], logLine[4] };
 
-		       }
-		       		       
-		    }
-		}catch(Exception e){
-			e.printStackTrace();	
+					// if key doesn't exist add it and make the HashMap for the value
+					if (!fileLog.containsKey(username)) {
+						HashMap<String, String[]> innermap = new HashMap<String, String[]>();
+						innermap.put(filename, datePathServer);
+						fileLog.put(username, innermap);
+					} else {
+						fileLog.get(username).put(filename, datePathServer);
+					}
+
+				}
+
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
-	
-	
-	//adds the entered values into the fileLog hashmap with the keys being the username and filename
+
+	// adds the entered values into the fileLog hashmap with the keys being the
+	// username and filename
 	public static synchronized void logAdd(String username, String filename, String date, String path, String server) {
-		
-		String[] datePathServer = {date,path,server};
-		
-		//if key doesn't exist add it and make the HashMap for the value
-	    if(!fileLog.containsKey(username)) {
-	    	HashMap<String, String[]> innermap =  new HashMap<String, String[]>();
-	    	innermap.put(filename, datePathServer);
-	    	fileLog.put(username, innermap);
-	    	
-	    	try {
-			    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("masterfiles.txt", true)));
-			    out.println(username + "::" + filename + "::" + date + "::" + path + "::" + server);
-			    out.close();
+
+		String[] datePathServer = { date, path, server };
+
+		// if key doesn't exist add it and make the HashMap for the value
+		if (!fileLog.containsKey(username)) {
+			HashMap<String, String[]> innermap = new HashMap<String, String[]>();
+			innermap.put(filename, datePathServer);
+			fileLog.put(username, innermap);
+
+			try {
+				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("masterfiles.txt", true)));
+				out.println(username + "::" + filename + "::" + date + "::" + path + "::" + server);
+				out.close();
 			} catch (IOException e) {
-			    e.printStackTrace();
+				e.printStackTrace();
 			}
-	    	
-	    }else if(fileLog.get(username).containsKey(filename)) {
-	    	
-	    }else {
-	    	fileLog.get(username).put(filename, datePathServer);
-	    	try {
-			    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("masterfiles.txt", true)));
-			    out.println(username + "::" + filename + "::" + date + "::" + path + "::" + server);
-			    out.close();
+
+		} else if (fileLog.get(username).containsKey(filename)) {
+
+		} else {
+			fileLog.get(username).put(filename, datePathServer);
+			try {
+				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("masterfiles.txt", true)));
+				out.println(username + "::" + filename + "::" + date + "::" + path + "::" + server);
+				out.close();
 			} catch (IOException e) {
-			    e.printStackTrace();
+				e.printStackTrace();
 			}
-	    }	
+		}
 	}
-	
-	
-	//prints the contents of the fileLog hashmap to masterfiles.txt
+
+	// prints the contents of the fileLog hashmap to masterfiles.txt
 	public static synchronized void printlog() {
 		try {
-		    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("masterfiles.txt", false)));
-		  
-		    for(Map.Entry<String, HashMap<String, String[]>> set1 : fileLog.entrySet()) {
-		    	for(Map.Entry<String, String[]> set2 : set1.getValue().entrySet()) {
-		    		out.println(set1.getKey() + " " + set2.getKey() + " " + set2.getValue()[0]+ " " + set2.getValue()[1]+ " " + set2.getValue()[2]);
-		    	}
-		    }
-		
-		    out.close();
+			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("masterfiles.txt", false)));
+
+			for (Map.Entry<String, HashMap<String, String[]>> set1 : fileLog.entrySet()) {
+				for (Map.Entry<String, String[]> set2 : set1.getValue().entrySet()) {
+					out.println(set1.getKey() + " " + set2.getKey() + " " + set2.getValue()[0] + " "
+							+ set2.getValue()[1] + " " + set2.getValue()[2]);
+				}
+			}
+
+			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-				
-		
+
 	}
-	
-	//Prints the contents of the fileLog hashmap to the console
+
+	// Prints the contents of the fileLog hashmap to the console
 	public static void PrintFileLog() {
-		for(Map.Entry<String, HashMap<String, String[]>> set1 : fileLog.entrySet()) {
-			for(Map.Entry<String, String[]> set2 : set1.getValue().entrySet()) {
-				System.out.println(set1.getKey() + " " + set2.getKey() + " " + set2.getValue()[0]+ " " + set2.getValue()[1]+ " " + set2.getValue()[2]);
+		for (Map.Entry<String, HashMap<String, String[]>> set1 : fileLog.entrySet()) {
+			for (Map.Entry<String, String[]> set2 : set1.getValue().entrySet()) {
+				System.out.println(set1.getKey() + " " + set2.getKey() + " " + set2.getValue()[0] + " "
+						+ set2.getValue()[1] + " " + set2.getValue()[2]);
 			}
 		}
 	}
-	
-	//removes logged file from fileLog hashmap and updates the log text file
+
+	// removes logged file from fileLog hashmap and updates the log text file
 	public static void logRemove(String username, String filename) {
-		if(fileLog.containsKey(username)) {
-			if(fileLog.get(username).containsKey(filename)) {
+		if (fileLog.containsKey(username)) {
+			if (fileLog.get(username).containsKey(filename)) {
 				fileLog.get(username).remove(filename);
 				printlog();
 			}
 		}
-		
-		
+
 	}
 
-	
-	
-	//below here are methods for system logs and appending to the system logs
+	// below here are methods for system logs and appending to the system logs
 	public static synchronized void sysLogPrint(String str) {
 		try {
-		    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("log.txt", true)));
-		    out.println(str);
-		    out.close();
+			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("log.txt", true)));
+			out.println(str);
+			out.close();
 		} catch (IOException e) {
-		    e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
-	
+
 	public static void dnconnect(String nodeName, String ip) {
 		LocalDateTime datetime = LocalDateTime.now();
 		String str1 = "[dncconnect]";
-		String str2 = datetime +", "+ nodeName + ", " + ip;
+		String str2 = datetime + ", " + nodeName + ", " + ip;
 		String str3 = String.format("%-15s %s", str1, str2);
 		sysLogPrint(str3);
-		}
-	
+	}
+
 	public static void userauth(String userName, String ip) {
 		LocalDateTime datetime = LocalDateTime.now();
 		String str1 = "[userauth]";
-		String str2 = datetime +", "+ userName + ", " + ip;
+		String str2 = datetime + ", " + userName + ", " + ip;
 		String str3 = String.format("%-15s %s", str1, str2);
 		sysLogPrint(str3);
 	}
-	
+
 	public static void userconnect(String userName, String ip) {
 		LocalDateTime datetime = LocalDateTime.now();
 		String str1 = "[userconnect]";
-		String str2 = datetime +", "+ userName + ", " + ip;
+		String str2 = datetime + ", " + userName + ", " + ip;
 		String str3 = String.format("%-15s %s", str1, str2);
 		sysLogPrint(str3);
 	}
-	
+
 	public static void dnfailure(String dnName, String ip) {
 		LocalDateTime datetime = LocalDateTime.now();
 		String str1 = "[dnfailure]";
-		String str2 = datetime +", "+ dnName + ", " + ip;
+		String str2 = datetime + ", " + dnName + ", " + ip;
 		String str3 = String.format("%-15s %s", str1, str2);
 		sysLogPrint(str3);
 	}
-	
+
 	public static void fileinsert(String dnName, String userName, String fileName) {
 		LocalDateTime datetime = LocalDateTime.now();
 		String str1 = "[fileinsert]";
-		String str2 = datetime +", "+ dnName + ", " + userName + ", " + fileName;
+		String str2 = datetime + ", " + dnName + ", " + userName + ", " + fileName;
 		String str3 = String.format("%-15s %s", str1, str2);
 		sysLogPrint(str3);
 	}
-	
+
 	public static void filedelete(String dnName, String userName, String fileName) {
 		LocalDateTime datetime = LocalDateTime.now();
 		String str1 = "[filedelete]";
-		String str2 = datetime +", "+ dnName + ", " + userName + ", " + fileName;
+		String str2 = datetime + ", " + dnName + ", " + userName + ", " + fileName;
 		String str3 = String.format("%-15s %s", str1, str2);
 		sysLogPrint(str3);
 	}
-	
+
 	public static void fileaccess(String dnName, String userName, String fileName) {
 		LocalDateTime datetime = LocalDateTime.now();
 		String str1 = "[fileaccess]";
-		String str2 = datetime +", "+ dnName + ", " + userName + ", " + fileName;
+		String str2 = datetime + ", " + dnName + ", " + userName + ", " + fileName;
 		String str3 = String.format("%-15s %s", str1, str2);
 		sysLogPrint(str3);
 	}
-	
+
 	public static void filefailure(String dnName, String userName, String fileName) {
 		LocalDateTime datetime = LocalDateTime.now();
 		String str1 = "[filefailure]";
-		String str2 = datetime +", " + userName + ", " + fileName;
+		String str2 = datetime + ", " + userName + ", " + fileName;
 		String str3 = String.format("%-15s %s", str1, str2);
 		sysLogPrint(str3);
 	}
