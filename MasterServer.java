@@ -13,14 +13,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.io.File;
 
 public class MasterServer {
 
 	private static HashMap<String, HashMap<String, String[]>> fileLog = new HashMap<String, HashMap<String, String[]>>();
 	static ArrayList<String> nodeList = new ArrayList<String>();
-	public final static String FILE_TO_RECEIVED = "test123.txt";
-	public final static int FILE_SIZE = 6022386;
+	public static String INSTRUCTION_FILE = "instruction.txt";
+	public static String FILE_TO_BE_RECEIVED;
+	public static int FILE_SIZE = 6022386;
 
 	public static void main(String[] args) throws IOException {
 
@@ -28,7 +28,7 @@ public class MasterServer {
 		int current = 0;
 		FileOutputStream fos = null;
 		BufferedOutputStream bos = null;
-		
+
 		int port = 52005;
 
 		MasterClient masterClient;
@@ -38,6 +38,7 @@ public class MasterServer {
 		System.out.println("Server is starting...");
 
 		while (true) {
+			String instruction = "";
 
 			try {
 				masterClient = new MasterClient(server.accept());
@@ -47,11 +48,11 @@ public class MasterServer {
 
 					System.out.println("Accepted connection : " + masterClient.client);
 
-					// receive file
+					// recieve file
 					byte[] mybytearray = new byte[FILE_SIZE];
 					InputStream is = masterClient.client.getInputStream();
 
-					fos = new FileOutputStream(FILE_TO_RECEIVED);
+					fos = new FileOutputStream(INSTRUCTION_FILE);
 					bos = new BufferedOutputStream(fos);
 
 					bytesRead = is.read(mybytearray, 0, mybytearray.length);
@@ -66,7 +67,7 @@ public class MasterServer {
 					bos.write(mybytearray, 0, current);
 					bos.flush();
 
-					System.out.println("File " + FILE_TO_RECEIVED + " downloaded (" + current + " bytes read)");
+					System.out.println("File " + INSTRUCTION_FILE + " downloaded (" + current + " bytes read)");
 				} finally {
 					if (fos != null)
 						fos.close();
@@ -78,13 +79,14 @@ public class MasterServer {
 
 					// InputStreamReader ISR = new
 					// InputStreamReader(masterClient.client.getInputStream());
-					FileReader fr = new FileReader("test123.txt");
+					FileReader fr = new FileReader(INSTRUCTION_FILE);
 					BufferedReader br = new BufferedReader(fr);
 
 					String line;
 					String[] tokens = null;
 
 					while ((line = br.readLine()) != null) {
+
 						tokens = line.split(",");
 						if (tokens[0].equals("1")) {
 							String ip = tokens[1];
@@ -92,20 +94,24 @@ public class MasterServer {
 							nodeList.add(ip);
 
 						} else if (tokens[0].equals("2")) {
-							System.out.println("test");
 
-							// sends whatever is needed to all of the nodes when a file is sent rather than
-							// loading ip addresses
-							// still needs different cases.
+							for (int i = 0; i < nodeList.size(); i++) {
+								MasterClient.sendFiletoNode(nodeList.get(i), INSTRUCTION_FILE);
+							}
 
+						}
+						// sets filename being received to filename sent specified by user
+						else if (tokens[0].equals("3")) {
+							FILE_TO_BE_RECEIVED = tokens[1];
+							for (int i = 0; i < nodeList.size(); i++) {
+								MasterClient.sendFileName(nodeList.get(i), FILE_TO_BE_RECEIVED);
+
+							}
 						}
 
 					}
 				} catch (Exception ex) {
 
-				}
-				for (int i = 0; i < nodeList.size(); i++) {
-					MasterClient.sendMessage(nodeList.get(i));
 				}
 
 				String message = "Thread " + t.getName() + " ";
@@ -118,7 +124,6 @@ public class MasterServer {
 			}
 		}
 
-		
 	}
 
 	public static String[] getFileList(String username) {
