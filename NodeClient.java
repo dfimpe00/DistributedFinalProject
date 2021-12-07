@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public class NodeClient extends Thread {
 
-	private Socket client;
+	public Socket client;
 
 	public NodeClient(Socket client) {
 		this.client = client;
@@ -30,6 +30,7 @@ public class NodeClient extends Thread {
 
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
+			writer.write("1,");
 			writer.write(n.getHost());
 			writer.close();
 
