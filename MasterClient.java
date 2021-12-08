@@ -38,8 +38,6 @@ public class MasterClient extends Thread {
 			Socket socket = new Socket(server, port);
 			PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
 
-			
-
 			System.out.println("Sending Message........");
 
 		} catch (Exception ex) {
@@ -196,7 +194,6 @@ public class MasterClient extends Thread {
 
 	public static boolean checkPass(String username, String passWord) {
 
-		readFile("password.txt");
 		String pass = readFile("password.txt").get(username);
 
 		String userpass = encryptPass(pass);
