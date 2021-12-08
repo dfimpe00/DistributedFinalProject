@@ -40,6 +40,9 @@ public class MasterServer {
 		ServerSocket server = new ServerSocket(port);
 
 		System.out.println("Server is starting...");
+		String isFive = "";
+		String tokens1 = "";
+		String tokens2 = "";
 
 		while (true) {
 
@@ -48,7 +51,17 @@ public class MasterServer {
 
 				Thread t = new Thread(masterClient);
 
-				t.start();
+				if (isFive.equals("5")) {
+					System.out.println(tokens1 + " " + tokens2);
+					System.out.println(MasterClient.checkPass(tokens1, tokens2));
+					ObjectOutputStream oos = new ObjectOutputStream(masterClient.client.getOutputStream());
+
+					System.out.println("Sending a great message");
+					oos.writeObject("Hi Client ");
+
+					oos.close();
+					isFive = "";
+				}
 
 				try {
 
@@ -70,27 +83,23 @@ public class MasterServer {
 							current += bytesRead;
 					} while (bytesRead > -1);
 
-//					String instruct = new String (mybytearray);
-//				
-//					
-//					String[] tokens = instruct.split(",");
-//					
-//					
-//					if (tokens[0].equals("5")) {
-//						System.out.println(MasterClient.checkPass(tokens[1], tokens[2]));
-//
-//						ObjectOutputStream oos = new ObjectOutputStream(masterClient.client.getOutputStream());
-//
-//						System.out.println("Sending a great message");
-//						oos.writeObject("Hi Client ");
-//
-//						oos.close();
-//					}
-
 					bos.write(mybytearray, 0, current);
 					bos.flush();
 
 					System.out.println("File " + INSTRUCTION_FILE + " downloaded (" + current + " bytes read)");
+
+					String instruct = new String(mybytearray);
+
+					String[] tokens = instruct.split(",");
+
+					if (tokens[0].equals("5")) {
+
+						isFive = tokens[0];
+						tokens1 = tokens[1];
+						tokens2 = tokens[2];
+
+					}
+
 				} finally {
 					if (fos != null)
 						fos.close();
@@ -142,21 +151,22 @@ public class MasterServer {
 
 							}
 						} else if (tokens[0].equals("5")) {
-							System.out.println(MasterClient.checkPass(tokens[1], tokens[2]));
+//							System.out.println(MasterClient.checkPass(tokens[1], tokens[2]));
 
-							System.out.println(tokens[0].toString());
-							ObjectOutputStream oos = new ObjectOutputStream(masterClient.client.getOutputStream());
-
-							System.out.println("Sending a great message");
-							oos.writeObject("Hi Client ");
-
-							oos.close();
+//							System.out.println(tokens[0].toString());
+//							ObjectOutputStream oos = new ObjectOutputStream(masterClient.client.getOutputStream());
+//
+//							System.out.println("Sending a great message");
+//							oos.writeObject("Hi Client ");
+//
+//							oos.close();
 						}
 					}
 				} catch (Exception ex) {
 
 				}
 
+				t.start();
 				String message = "Thread " + t.getName() + " ";
 				System.out.println(message);
 
