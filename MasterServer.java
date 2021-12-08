@@ -1,18 +1,22 @@
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ServerSocket;
-import java.util.ArrayList;
 
 public class MasterServer {
 
@@ -38,11 +42,13 @@ public class MasterServer {
 		System.out.println("Server is starting...");
 
 		while (true) {
-			String instruction = "";
 
 			try {
 				masterClient = new MasterClient(server.accept());
+
 				Thread t = new Thread(masterClient);
+
+				t.start();
 
 				try {
 
@@ -63,6 +69,23 @@ public class MasterServer {
 						if (bytesRead >= 0)
 							current += bytesRead;
 					} while (bytesRead > -1);
+
+//					String instruct = new String (mybytearray);
+//				
+//					
+//					String[] tokens = instruct.split(",");
+//					
+//					
+//					if (tokens[0].equals("5")) {
+//						System.out.println(MasterClient.checkPass(tokens[1], tokens[2]));
+//
+//						ObjectOutputStream oos = new ObjectOutputStream(masterClient.client.getOutputStream());
+//
+//						System.out.println("Sending a great message");
+//						oos.writeObject("Hi Client ");
+//
+//						oos.close();
+//					}
 
 					bos.write(mybytearray, 0, current);
 					bos.flush();
@@ -88,12 +111,15 @@ public class MasterServer {
 					while ((line = br.readLine()) != null) {
 
 						tokens = line.split(",");
+						// sending ip from nodes case
 						if (tokens[0].equals("1")) {
 							String ip = tokens[1];
 							System.out.println(ip);
 							nodeList.add(ip);
 
-						} else if (tokens[0].equals("2")) {
+						}
+						// inserting file case
+						else if (tokens[0].equals("2")) {
 
 							for (int i = 0; i < nodeList.size(); i++) {
 								MasterClient.sendFiletoNode(nodeList.get(i), INSTRUCTION_FILE);
@@ -108,16 +134,31 @@ public class MasterServer {
 
 							}
 						}
+						// delete a file case
+						else if (tokens[0].equals("4")) {
+							String filetoDelete = tokens[1];
+							for (int i = 0; i < nodeList.size(); i++) {
+								MasterClient.sendDeleteFileName(nodeList.get(i), filetoDelete);
 
+							}
+						} else if (tokens[0].equals("5")) {
+							System.out.println(MasterClient.checkPass(tokens[1], tokens[2]));
+
+							System.out.println(tokens[0].toString());
+							ObjectOutputStream oos = new ObjectOutputStream(masterClient.client.getOutputStream());
+
+							System.out.println("Sending a great message");
+							oos.writeObject("Hi Client ");
+
+							oos.close();
+						}
 					}
 				} catch (Exception ex) {
 
 				}
 
 				String message = "Thread " + t.getName() + " ";
-
 				System.out.println(message);
-				t.start();
 
 			} catch (Exception ex) {
 
