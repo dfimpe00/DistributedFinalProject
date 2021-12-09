@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,29 +78,6 @@ public class NodeServer {
 						bos.close();
 				}
 
-				try {
-
-					// InputStreamReader ISR = new
-					// InputStreamReader(masterClient.client.getInputStream());
-					FileReader fr = new FileReader(INSTRUCTION_FILE);
-					BufferedReader br = new BufferedReader(fr);
-
-					String line;
-					String[] tokens = null;
-
-					while ((line = br.readLine()) != null) {
-
-						tokens = line.split(",");
-
-						if (tokens[0].equals("3")) {
-							FILE_TO_RECEIVED = tokens[1];
-						}
-
-					}
-				} catch (Exception ex) {
-
-				}
-
 				if (FILE_TO_RECEIVED != null) {
 					try {
 						FileReader fr = new FileReader(INSTRUCTION_FILE);
@@ -114,7 +94,7 @@ public class NodeServer {
 
 							tokens = line.split(",");
 							if (tokens[0].equals("2")) {
-								myWriter.write(tokens[1]);
+								myWriter.write(tokens[2]);
 								myWriter.write("\n");
 							} else {
 								myWriter.write(line);
@@ -131,6 +111,31 @@ public class NodeServer {
 					}
 				}
 
+				try {
+
+					// InputStreamReader ISR = new
+					// InputStreamReader(masterClient.client.getInputStream());
+					FileReader fr = new FileReader(INSTRUCTION_FILE);
+					BufferedReader br = new BufferedReader(fr);
+
+					String line;
+					String[] tokens = null;
+
+					while ((line = br.readLine()) != null) {
+
+						tokens = line.split(",");
+
+						if (tokens[0].equals("3")) {
+							FILE_TO_RECEIVED = tokens[1];
+						} else if (tokens[0].equals("4")) {
+							deleteFile(tokens[1]);
+						}
+
+					}
+				} catch (Exception ex) {
+
+				}
+
 				String message = "Thread " + t.getName() + " has been assigned to this client.";
 
 				System.out.println(message);
@@ -143,6 +148,14 @@ public class NodeServer {
 
 			}
 		}
+	}
+
+	public static void deleteFile(String file) throws IOException {
+
+		Path fileToDelete = Paths.get(file);
+		Files.delete(fileToDelete);
+		System.out.println("File: " + file + " was successfully deleted");
+
 	}
 
 	// loads in values to fileLog from the datafiles.txt
