@@ -43,6 +43,7 @@ public class MasterServer {
 		String isFive = "";
 		String tokens1 = "";
 		String tokens2 = "";
+		String isValid = "";
 
 		while (true) {
 
@@ -51,23 +52,31 @@ public class MasterServer {
 
 				Thread t = new Thread(masterClient);
 
+				t.start();
+
 				if (isFive.equals("5")) {
-					System.out.println(tokens1 + " " + tokens2);
-					System.out.println(MasterClient.checkPass(tokens1, tokens2));
+
+					if (MasterClient.checkPass(tokens1, tokens2)) {
+						isValid = "1";
+					} else {
+						isValid = "2";
+					}
+
 					ObjectOutputStream oos = new ObjectOutputStream(masterClient.client.getOutputStream());
 
-					System.out.println("Sending a great message");
-					oos.writeObject("Hi Client ");
+					oos.writeObject(isValid);
 
-					oos.close();
 					isFive = "";
+					tokens1 = "";
+					tokens2 = "";
+					oos.close();
+
 				}
 
 				try {
 
 					System.out.println("Accepted connection : " + masterClient.client);
 
-					// recieve file
 					byte[] mybytearray = new byte[FILE_SIZE];
 					InputStream is = masterClient.client.getInputStream();
 
@@ -88,18 +97,6 @@ public class MasterServer {
 
 					System.out.println("File " + INSTRUCTION_FILE + " downloaded (" + current + " bytes read)");
 
-					String instruct = new String(mybytearray);
-
-					String[] tokens = instruct.split(",");
-
-					if (tokens[0].equals("5")) {
-
-						isFive = tokens[0];
-						tokens1 = tokens[1];
-						tokens2 = tokens[2];
-
-					}
-
 				} finally {
 					if (fos != null)
 						fos.close();
@@ -109,8 +106,6 @@ public class MasterServer {
 
 				try {
 
-					// InputStreamReader ISR = new
-					// InputStreamReader(masterClient.client.getInputStream());
 					FileReader fr = new FileReader(INSTRUCTION_FILE);
 					BufferedReader br = new BufferedReader(fr);
 
@@ -123,11 +118,10 @@ public class MasterServer {
 						// sending ip from nodes case
 						if (tokens[0].equals("1")) {
 							String ip = tokens[1];
-							System.out.println(ip);
 							nodeList.add(ip);
 
 						}
-						// inserting file case
+						// inserting file case, tokens[0] is instruciton, tokens[1] is username
 						else if (tokens[0].equals("2")) {
 
 							for (int i = 0; i < nodeList.size(); i++) {
@@ -135,7 +129,8 @@ public class MasterServer {
 							}
 
 						}
-						// sets filename being received to filename sent specified by user
+						// sets filename being received to filename sent specified by user, tokens[1] is
+						// filename, set global variable to tokens[1]
 						else if (tokens[0].equals("3")) {
 							FILE_TO_BE_RECEIVED = tokens[1];
 							for (int i = 0; i < nodeList.size(); i++) {
@@ -143,30 +138,28 @@ public class MasterServer {
 
 							}
 						}
-						// delete a file case
+						// delete a file case, tokens[0] is instruction, tokens[1] is username,
+						// tokens[2] is filename being deleted
 						else if (tokens[0].equals("4")) {
-							String filetoDelete = tokens[1];
+							String filetoDelete = tokens[2];
 							for (int i = 0; i < nodeList.size(); i++) {
 								MasterClient.sendDeleteFileName(nodeList.get(i), filetoDelete);
 
 							}
-						} else if (tokens[0].equals("5")) {
-//							System.out.println(MasterClient.checkPass(tokens[1], tokens[2]));
+						}
+						// user authentication
+						else if (tokens[0].equals("5")) {
 
-//							System.out.println(tokens[0].toString());
-//							ObjectOutputStream oos = new ObjectOutputStream(masterClient.client.getOutputStream());
-//
-//							System.out.println("Sending a great message");
-//							oos.writeObject("Hi Client ");
-//
-//							oos.close();
+							isFive = tokens[0];
+							tokens1 = tokens[1];
+							tokens2 = tokens[2];
+
 						}
 					}
 				} catch (Exception ex) {
 
 				}
 
-				t.start();
 				String message = "Thread " + t.getName() + " ";
 				System.out.println(message);
 
